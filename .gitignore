@@ -1,0 +1,33 @@
+# ============================================================
+#  Keil MDK-ARM build outputs (regenerated on every build)
+# ============================================================
+App_AllBMS_03/projects/MDK-ARM/Objects/
+App_AllBMS_03/projects/MDK-ARM/Listings/
+App_AllBMS_03/projects/MDK-ARM/DebugConfig/
+App_AllBMS_03/projects/MDK-ARM/RTE/
+
+# ============================================================
+#  Keil / IDE per-user state (not portable across machines)
+# ============================================================
+*.uvguix.*
+*.scvd
+JLinkLog.txt
+JLinkSettings.ini
+
+# ============================================================
+#  Compiled firmware images & build logs (rebuildable)
+# ============================================================
+*.bin
+build_log.txt
+
+# ============================================================
+#  Stray compiler intermediates (normally under Objects/)
+# ============================================================
+*.o
+*.d
+*.crf
+*.dep
+*.lst
+*.axf
+*.htm
+*.bak
