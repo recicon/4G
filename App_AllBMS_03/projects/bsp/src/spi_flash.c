@@ -58,13 +58,13 @@ void SpiFlash_Init(void)
     GPIO_InitType GPIO_InitStructure;
     SPI_InitType SPI_InitStructure;
 
-    RCC_EnableAPB2PeriphClk(RCC_APB2_PERIPH_GPIOB | RCC_APB2_PERIPH_SPI1, ENABLE);
+    RCC_EnableAPB2PeriphClk(RCC_APB2_PERIPH_GPIOB | RCC_APB2_PERIPH_SPI1 | RCC_APB2_PERIPH_GPIOA, ENABLE);
 
     GPIO_InitStruct(&GPIO_InitStructure);
     GPIO_InitStructure.Pin       = SPI_FLASH_CS_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Pull = GPIO_No_Pull;
-    GPIO_InitPeripheral(SPI_FLASH_GPIO, &GPIO_InitStructure);
+    GPIO_InitPeripheral(SPI_FLASH_CS_GPIO, &GPIO_InitStructure);
     SPI_FLASH_CS_HIGH();
 
     GPIO_InitStructure.Pin            = SPI_FLASH_SCK_PIN | SPI_FLASH_MISO_PIN;

@@ -634,6 +634,21 @@
               <FileType>1</FileType>
               <FilePath>..\bsp\src\spi_flash.c</FilePath>
             </File>
+            <File>
+              <FileName>Comm4G_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\src\Comm4G_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>Comm4G_at.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\src\Comm4G_at.c</FilePath>
+            </File>
+            <File>
+              <FileName>Comm4G.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\src\Comm4G.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1310,6 +1325,21 @@
               <FileName>spi_flash.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\bsp\src\spi_flash.c</FilePath>
+            </File>
+            <File>
+              <FileName>Comm4G_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\src\Comm4G_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>Comm4G_at.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\src\Comm4G_at.c</FilePath>
+            </File>
+            <File>
+              <FileName>Comm4G.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\src\Comm4G.c</FilePath>
             </File>
           </Files>
         </Group>

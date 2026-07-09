@@ -240,6 +240,9 @@ uint8_t FaultLevelInit(void);
 uint8_t FaultLevelOneKey(uint8_t byBatType);
 void ExecMainMsgProcess(void);
 void ExecBleMsgProcess(void);
+#if EN_4GCOMM
+void Exec4GMsgProcess(void);
+#endif
 void ExecUartMsgProcess(void);
 void ExecDiagnoseCmd(void);
 void ExecLogBmStRecord(void);

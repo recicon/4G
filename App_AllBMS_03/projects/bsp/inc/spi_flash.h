@@ -6,16 +6,17 @@
 #include "n32wb43x_gpio.h"
 #include "n32wb43x_rcc.h"
 
-/* SPI1 pins: PB3=SCK, PB4=MISO, PB5=MOSI, PB2=CS */
+/* SPI1 总线(GPIOB): PB3=SCK, PB4=MISO, PB5=MOSI; CS=PA0(移出 PB6, 让出 4G USART1_TX) */
 #define SPI_FLASH_SPI           SPI1
 #define SPI_FLASH_GPIO          GPIOB
+#define SPI_FLASH_CS_GPIO       GPIOA       /* CS 独立在 GPIOA(PA0), 与总线 GPIOB 分离 */
 #define SPI_FLASH_SCK_PIN       GPIO_PIN_3
 #define SPI_FLASH_MISO_PIN      GPIO_PIN_4
 #define SPI_FLASH_MOSI_PIN      GPIO_PIN_5
-#define SPI_FLASH_CS_PIN        GPIO_PIN_6
+#define SPI_FLASH_CS_PIN        GPIO_PIN_0
 
-#define SPI_FLASH_CS_LOW()      GPIO_ResetBits(SPI_FLASH_GPIO, SPI_FLASH_CS_PIN)
-#define SPI_FLASH_CS_HIGH()     GPIO_SetBits(SPI_FLASH_GPIO, SPI_FLASH_CS_PIN)
+#define SPI_FLASH_CS_LOW()      GPIO_ResetBits(SPI_FLASH_CS_GPIO, SPI_FLASH_CS_PIN)
+#define SPI_FLASH_CS_HIGH()     GPIO_SetBits(SPI_FLASH_CS_GPIO, SPI_FLASH_CS_PIN)
 
 /* ZD25Q16 commands */
 #define CMD_WREN                0x06

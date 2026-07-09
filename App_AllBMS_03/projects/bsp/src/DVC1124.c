@@ -624,7 +624,7 @@ void Heating_Ctr(void)
     g_tDiagnosticMsg.uRelaySt.tBits.bBm1 = 0;
     if (GPIO_ReadInputDataBit(HTDET_PORT,HTDET_PIN))
     {
-      GPIO_SetBits(HEAT_PORT, HEAT_FSEN_PIN);
+      GPIO_SetBits(FSEN_PORT, HEAT_FSEN_PIN);  // FSEN 输出(PA8);原误用 HEAT_PORT 会打到 PA1=温度基准 ADC
     }
   }
 }

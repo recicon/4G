@@ -12,6 +12,7 @@
 #include "app_proto_cmn.h"
 #include "app_proto_cmd.h"
 #include "app_uart.h"
+#include "Comm4G.h"     /* 4G(USART1) 发送分流: Comm4G_SocketSend */
 /**********************************************************************************************
 *							   Macro Define
 **********************************************************************************************/
@@ -104,6 +105,14 @@ static en_result_t  SCI_GeneralSendParamOut(USART_Module* USART, uint8_t *ptrDat
             at_blesend(g_sBleRtxMsg.wbuf, g_sBleRtxMsg.w_num);
         }
         break;
+#if EN_4GCOMM
+    case (uint32_t)USART1:
+        memcpy(g_s4GRtxMsg.wbuf, ptrData, wDataLen);
+        memcpy(&g_s4GRtxMsg.wbuf[wDataLen], l_bySendBuf, 2);
+        g_s4GRtxMsg.w_num = wDataLen + 2;
+        Comm4G_SocketSend(g_s4GRtxMsg.wbuf, g_s4GRtxMsg.w_num);  /* 置待发,由Comm4G_Loop异步CIPSEND */
+        break;
+#endif
     default:
         break;
     }
@@ -556,12 +565,19 @@ typedef struct {
     uint64_t u64LastTick;  /* 上次发送时刻(300ms 节流) */
 } tLogSendCtrl;
 
+#if EN_4GCOMM
+static tLogSendCtrl s_aLogSend[4];   /* 0=485 1=BLE 2=UART 3=4G */
+#else
 static tLogSendCtrl s_aLogSend[3];   /* 0=485 1=BLE 2=UART */
+#endif
 
 static uint8_t LogChIndex(USART_Module* USART)
 {   /* 与 SCI_GeneralSendParamOut 的通道分流口径保持一致 */
     if ((uint32_t)USART == (uint32_t)USARTy) return 1;   /* BLE */
     if ((uint32_t)USART == (uint32_t)UART)   return 2;   /* UART */
+#if EN_4GCOMM
+    if ((uint32_t)USART == (uint32_t)USART1) return 3;   /* 4G */
+#endif
     return 0;                                            /* 485 (default) */
 }
 

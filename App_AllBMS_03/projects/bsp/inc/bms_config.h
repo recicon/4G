@@ -91,7 +91,22 @@
 /* 功能开关 */
 #define EN_BOOTLOADER           1               /* 使能Bootloader */
 #define EN_BLUCOMM              1               /* 使能蓝牙 */
-#define EN_4GCOMM               0               /* 使能4G */
+#define EN_4GCOMM               1               /* 使能4G */
+
+/*============================================================================
+ *                    4G(A7670C)通信配置 —— 仅 EN_4GCOMM=1 时生效
+ *  服务器/APN 先用宏硬编码(TCP 透传承载与 485 一致的 Modbus 报文)
+ *============================================================================*/
+#if EN_4GCOMM
+#define G4_UART_BAUD            115200          /* 4G模块 USART1 波特率 */
+#define G4_APN                  "CMNET"         /* PDP APN(按运营商SIM卡修改) */
+#define G4_SERVER_ADDR          "47.100.0.1"    /* TCP服务器 IP 或域名 */
+#define G4_SERVER_PORT          6000            /* TCP服务器端口 */
+#define G4_KEEPALIVE_S          60              /* TCP心跳/保活周期 秒 */
+#define G4_RECONNECT_MIN_S      2               /* 断线重连退避下限 秒 */
+#define G4_RECONNECT_MAX_S      120             /* 断线重连退避上限 秒 */
+#define G4_COMM_TIMEOUT_MS      180000UL        /* 在线通信超时(置4G故障) ms */
+#endif
 
 /* 循环配置 */
 #define N_PACK_LOOP_TIME        3000            /* 主循环周期ms */

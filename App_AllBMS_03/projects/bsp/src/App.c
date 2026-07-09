@@ -1231,6 +1231,31 @@ void ExecBleMsgProcess(void)
 
 
 
+#if EN_4GCOMM
+/* 4G(USART1)消息处理:与 ExecBleMsgProcess 同构,承载与 485 一致的 Modbus 协议 */
+void Exec4GMsgProcess(void)
+{
+   sUARTMsgType* sRxMsg = &g_s4GRtxMsg;
+   if (sRxMsg->r_index == 0) LogMemorySendPoll(USART1);   /* 空闲拍推进日志分批发送(4G) */
+   if (sRxMsg->r_index > 0)
+   {
+       g_u64LastCommMs = GetTick_ms();
+       bool is_end = false;
+       if (sRxMsg->Timeout_ms == 0)
+           is_end = true;
+       if (!is_end)
+           is_end = recv_isOk(sRxMsg->rbuf, sRxMsg->r_index, g_tBatPackCtrl.tEESpec.byBmsId);
+       if (is_end)
+       {
+           if (Ok == ExecModbusMasterProcess(USART1, sRxMsg))
+               g_tBatPackInfo.tBmDiagVal.tBits.u14GCommFlg = 0;
+           memset(sRxMsg->rbuf, 0, sRxMsg->r_index);
+           sRxMsg->r_index = 0;
+       }
+   }
+}
+#endif
+
 void ExecUartMsgProcess(void)
 {
 

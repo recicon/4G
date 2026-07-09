@@ -59,6 +59,7 @@ void Uart_Init(void);
 extern sUARTMsgType g_sMainRtxMsg;
 extern sUARTMsgType g_sBleRtxMsg;
 extern sUARTMsgType g_sUartRtxMsg;
+extern sUARTMsgType g_s4GRtxMsg;    /* 4G(USART1) 协议桥接缓冲, 定义于 Comm4G.c */
 
 
 #endif

@@ -5,10 +5,13 @@
 #include "n32wb43x.h"
 #include "n32wb43x_gpio.h"
 #include "n32wb43x_it.h"
+#include "bms_config.h"     /* EN_4GCOMM: PB7 归 4G(USART1_RX) 时摘除 CAN 唤醒 */
 
-#define DCDCEN_PORT        GPIOD
-#define DCDCEN_PIN       GPIO_PIN_8
+#define DCDCEN_PORT        GPIOC
+#define DCDCEN_PIN       GPIO_PIN_3
 
+/* 注:新板 M5V(SP0M18 buck)/M3V3(AMS1117)由硬件自使能,非 MCU 控制;PC1/PC0 实为 P4 连接器信号(疑 MACC/MPRE_DSG)。
+ * 固件仅在 Port_Config 置上电稳定态,已移除休眠/深睡电源轨误操作。语义/极性重定义待 PCB 网表确认(见 plans 第2层)。 */
 #define M5V_CTRL_PORT      GPIOC
 #define M5V_CTRL_PIN       GPIO_PIN_1
 
@@ -24,22 +27,17 @@
 
 #define HEAT_PORT              GPIOA
 #define HEAT_HTCTRL_PIN        GPIO_PIN_5
-#define FSEN_PORT         		GPIOB
-#define HEAT_FSEN_PIN          GPIO_PIN_1
+#define FSEN_PORT         		GPIOA
+#define HEAT_FSEN_PIN          GPIO_PIN_8
 
 
-#define HTDET_PORT              GPIOC
-#define HTDET_PIN          GPIO_PIN_3
+#define HTDET_PORT              GPIOD
+#define HTDET_PIN          GPIO_PIN_8
 
 #define TIME_1S           1000
 #define SHALLOW_SLEEP_TIMEOUT  (60 * TIME_1S)   // 1 minute idle -> sleep
 
 // Wake-up source pins for shallow sleep
-#define WAKE_RS485_PORT       GPIOA
-#define WAKE_RS485_PIN        GPIO_PIN_8         // RS485 wake (PA8) -> EXTI8
-#define WAKE_RS485_EXTI_LINE  EXTI_LINE8
-#define WAKE_RS485_PORT_SRC   GPIOA_PORT_SOURCE
-#define WAKE_RS485_PIN_SRC    GPIO_PIN_SOURCE8
 
 #define WAKE_AFE_PORT         GPIOC
 #define WAKE_AFE_PIN          GPIO_PIN_4         // AFE (PC4) EXTI4 falling
@@ -51,13 +49,8 @@
 #define WAKE_BLE_PIN          GPIO_PIN_7         // BLE (PC7) polled
 
 #define WAKE_KEY_PORT         GPIOB
-#define WAKE_KEY_PIN          GPIO_PIN_0         // Key (PB0) polled
+#define WAKE_KEY_PIN          GPIO_PIN_2         // Key (PB2) polled
 
-#define WAKE_CAN_PORT         GPIOB
-#define WAKE_CAN_PIN          GPIO_PIN_7         // CAN wake (PB7) EXTI7 falling
-#define WAKE_CAN_EXTI_LINE    EXTI_LINE7
-#define WAKE_CAN_PORT_SRC     GPIOB_PORT_SOURCE
-#define WAKE_CAN_PIN_SRC      GPIO_PIN_SOURCE7
 
 #define WAKE_UART_PORT        GPIOD
 #define WAKE_UART_PIN         GPIO_PIN_2         // UART5 RX (PD2) via UART RX interrupt

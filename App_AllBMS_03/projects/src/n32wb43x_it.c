@@ -128,25 +128,20 @@ void SysTick_Handler(void)
         g_sBleRtxMsg.Timeout_ms--;
     if (g_sUartRtxMsg.Timeout_ms > 0)
         g_sUartRtxMsg.Timeout_ms--;
+#if EN_4GCOMM
+    if (g_s4GRtxMsg.Timeout_ms > 0)
+        g_s4GRtxMsg.Timeout_ms--;
+#endif
 }
-
-extern volatile bool g_bWakeCan;
-extern volatile bool g_bWakeRs485;
 
  void EXTI9_5_IRQHandler(void)
 {
-    if(RESET != EXTI_GetITStatus(EXTI_LINE7))
-    {
+    /* CAN/RS485 唤醒已移除;仅清 EXTI7/EXTI8 pending
+     * (EXTI7 与 BLE 的 PC7 IRQ 共用 app_io.c,不清 pending 会中断风暴) */
+    if (RESET != EXTI_GetITStatus(EXTI_LINE7))
         EXTI_ClrITPendBit(EXTI_LINE7);
-			if(GPIO_ReadInputDataBit(WAKE_CAN_PORT, WAKE_CAN_PIN))
-        g_bWakeCan = true;
-    }
-    if(RESET != EXTI_GetITStatus(EXTI_LINE8))
-    {
+    if (RESET != EXTI_GetITStatus(EXTI_LINE8))
         EXTI_ClrITPendBit(EXTI_LINE8);
-			if(GPIO_ReadInputDataBit(WAKE_RS485_PORT, WAKE_RS485_PIN))
-        g_bWakeRs485 = true;
-    }
 }
 
 extern volatile bool g_bWakeAfe;

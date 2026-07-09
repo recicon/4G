@@ -5,13 +5,12 @@
 #include"app_io.h"
 #include"Soc.h"
 #include"app_proto_cmn.h"
+#include"Comm4G.h"
 
 bool shallow_sleeping = false;
 bool deep_sleeping = false;
 bool g_bSleepActive = false;
 static bool deepsleep_started = false;
-volatile bool g_bWakeCan  = false;
-volatile bool g_bWakeRs485 = false;
 volatile bool g_bWakeAfe  = false;
 volatile bool g_bWakeUart = false;
 /**
@@ -107,6 +106,8 @@ void Port_Config(void)
 
   PortInit(DCDCEN_PORT, DCDCEN_PIN, GPIO_Mode_Out_PP);
   GPIO_SetBits(DCDCEN_PORT, DCDCEN_PIN);
+  /* 新板:M5V(SP0M18 buck 自使能)/M3V3(AMS1117 常开)非 MCU 控制;PC1/PC0 实为 P4 连接器信号(疑 MACC/MPRE_DSG)。
+   * 此处仅置上电稳定态(PC1 高、PC0 低),已不再随休眠翻转;电源断电统一经 PC3=DCDC_EN。完整语义/极性待网表确认。 */
   PortInit(M5V_CTRL_PORT, M5V_CTRL_PIN, GPIO_Mode_Out_PP);
   GPIO_SetBits(M5V_CTRL_PORT, M5V_CTRL_PIN);
   PortInit(M3V3_CTRL_PORT, M3V3_CTRL_PIN, GPIO_Mode_Out_PP);
@@ -121,8 +122,6 @@ void Port_Config(void)
   PortInit(WAKE_LOAD_PORT, WAKE_LOAD_PIN, GPIO_Mode_Input);
   PortInit(WAKE_KEY_PORT, WAKE_KEY_PIN, GPIO_Mode_Input);  // Key button
 	PortInit(WAKE_AFE_PORT, WAKE_AFE_PIN, GPIO_Mode_Input);  
-	PortInit(WAKE_RS485_PORT, WAKE_RS485_PIN, GPIO_Mode_Input);
-	PortInit(WAKE_CAN_PORT, WAKE_CAN_PIN, GPIO_Mode_Input);    
   GPIO_SetBits(AFE_PORT, AFE_MCUIO_PIN);
 
 
@@ -160,16 +159,6 @@ static bool Sleep_WakeEventCheck(void)
         g_bWakeAfe = false;
         return true;
     }   
-    /* RS485 wake (PA8) EXTI8 rising */
-    if (g_bWakeRs485) {
-        g_bWakeRs485 = false;
-        return true;
-    }
-    /* CAN wake (PB7) EXTI7 rising */
-    if (g_bWakeCan) {
-        g_bWakeCan = false;
-        return true;
-    }
     /* UART5 debug RX - UART_IRQHandler sets g_bWakeUart */
     if (g_bWakeUart) {
         g_bWakeUart = false;
@@ -205,8 +194,6 @@ void Sleep_WakeupConfig(void)
 
     /* Clear any stale pending bits before re-mapping EXTI lines */
     EXTI_ClrITPendBit(WAKE_AFE_EXTI_LINE);
-    EXTI_ClrITPendBit(WAKE_CAN_EXTI_LINE);
-    EXTI_ClrITPendBit(WAKE_RS485_EXTI_LINE);
 
     /* AFE (PC4) -> EXTI4 falling edge */
     GPIO_ConfigEXTILine(WAKE_AFE_PORT_SRC, WAKE_AFE_PIN_SRC);
@@ -216,22 +203,8 @@ void Sleep_WakeupConfig(void)
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
     EXTI_InitPeripheral(&EXTI_InitStructure);
 
-    /* CAN (PB7) -> EXTI7 rising edge */
-    GPIO_ConfigEXTILine(WAKE_CAN_PORT_SRC, WAKE_CAN_PIN_SRC);
-    EXTI_InitStructure.EXTI_Line    = WAKE_CAN_EXTI_LINE;
-    EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-    EXTI_InitPeripheral(&EXTI_InitStructure);
-	
-    /* RS485 (PA8) -> EXTI8 rising edge */
-    GPIO_ConfigEXTILine(WAKE_RS485_PORT_SRC, WAKE_RS485_PIN_SRC);
-    EXTI_InitStructure.EXTI_Line    = WAKE_RS485_EXTI_LINE;
-    EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-    EXTI_InitPeripheral(&EXTI_InitStructure);
-		
+    /* CAN(PB7/EXTI7) 与 RS485(PA8/EXTI8) 唤醒已按需求移除;仅保留 AFE 唤醒 */
+
     /* Enable NVIC for wake-up EXTI interrupts */
     NVIC_InitStructure.NVIC_IRQChannel                   = EXTI4_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
@@ -277,23 +250,18 @@ void Sleep_PeripheralDisable(void)
 
     DVC1124_Sleep();
 
-    /* Power off 3.3V and 5V rails */
-    GPIO_SetBits(M3V3_CTRL_PORT, M3V3_CTRL_PIN);
-    GPIO_ResetBits(M5V_CTRL_PORT, M5V_CTRL_PIN);
+#if EN_4GCOMM
+    Comm4G_SleepDisable();   /* 拉低 LTEPWON 断 4G 电源 + 停 USART1 */
+#endif
+
+    /* 新板电源轨非 MCU 控制;原经 PC0/PC1 的"断电源轨"在新板会误动 P4 信号
+     * (PC0 拉高 = 误驱预放电有效),故移除。深睡断电经 PC3=DCDC_EN。 */
 		Delay_ms(1);
 }
 
 void Sleep_PeripheralRestore(void)
 {
-    /* Clear all wake-up EXTI pending bits from the sleep wake event */
-    EXTI_ClrITPendBit(WAKE_CAN_EXTI_LINE);
-    EXTI_ClrITPendBit(WAKE_RS485_EXTI_LINE);
-
-    /* Power up sequence: 5V first, then 3.3V */
-    GPIO_SetBits(M5V_CTRL_PORT, M5V_CTRL_PIN);
-    Delay_ms(5);
-    GPIO_ResetBits(M3V3_CTRL_PORT, M3V3_CTRL_PIN);
-    Delay_ms(5);
+    /* 新板电源轨非 MCU 控制(见 Sleep_PeripheralDisable);PC0/PC1 保持稳定态,无需上电时序。 */
 
     /* Re-enable TIM1 */
     RCC_EnableAPB2PeriphClk(RCC_APB2_PERIPH_TIM1, ENABLE);
@@ -333,6 +301,10 @@ void Sleep_PeripheralRestore(void)
     CurDriftCalib_Init();
     SOC_WakeupCalibrate();
 
+#if EN_4GCOMM
+    Comm4G_SleepRestore();   /* 4G 重上电并重新联网 */
+#endif
+
     g_bSleepActive = false;
 }
 
@@ -352,7 +324,11 @@ void Shallow_Sleep(void)
         }
         return;
     }
-    if (!bDSGING && !bCHGING && app_cmn_env.conn_stat != AT_STAT_CONN && GetTick_ms() - g_u64LastCommMs > 6000)
+    if (!bDSGING && !bCHGING && app_cmn_env.conn_stat != AT_STAT_CONN
+#if EN_4GCOMM
+        && !Comm4G_IsOnline()      /* 4G 在线时抑制浅睡眠,保持长连接 */
+#endif
+        && GetTick_ms() - g_u64LastCommMs > 6000)
     {
         if (!shallow_sleeping)
         {
@@ -373,8 +349,6 @@ void Shallow_Sleep(void)
                 /* Ensure UART5 RX interrupt is enabled for sleep wake-up */
                 USART_ConfigInt(UART, USART_INT_RXDNE, ENABLE);
                 g_bWakeUart = false;
-								g_bWakeCan  = false;
-								g_bWakeRs485 = false;
 								g_bWakeAfe  = false;
 								
 								 GPIO_SetBits(LED_PORT, LED_PIN);
@@ -442,9 +416,8 @@ void Deep_Sleep(void)
 								/* TIM1 enable counter */
 								TIM_Enable(TIM1, DISABLE); 
 							  Delay_ms(2);
-                GPIO_ResetBits(DCDCEN_PORT, DCDCEN_PIN);
-                GPIO_SetBits(M3V3_CTRL_PORT, M3V3_CTRL_PIN);
-                GPIO_ResetBits(M5V_CTRL_PORT, M5V_CTRL_PIN);
+                GPIO_ResetBits(DCDCEN_PORT, DCDCEN_PIN);  /* PC3=DCDC_EN 复位:断整个 buck,所有轨随之掉电 */
+                /* 原 M3V3/M5V(PC0/PC1)操作已移除:非 MCU 控制电源轨,且新板会误动 P4 信号 */
             }
         }
     }

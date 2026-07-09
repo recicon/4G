@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include "spi_flash.h"
 #include "TimeModule.h"
+#include "Comm4G.h"
 
 typedef struct {
     uint64_t last_exec_time;  // 上次执行时间
@@ -62,6 +63,9 @@ void init_all_tasks(void) {
     register_timer_task(50,  SocEstimation);
     register_timer_task(50,  ExecUartMsgProcess);
     register_timer_task(50,  ExecBleMsgProcess);
+#if EN_4GCOMM
+    register_timer_task(50,  Exec4GMsgProcess);
+#endif
     register_timer_task(500,  SendSifData);
     register_timer_task(1000, LogPeriodicRecord);
 
@@ -110,6 +114,9 @@ void Init_Handle(void)
     AFEParam_Config();
     CAN_User_Init();
     ble_init();
+#if EN_4GCOMM
+    Comm4G_Init();
+#endif
     CurDriftCalib_Init();
     Flash_MemoryInit();
 
@@ -131,6 +138,9 @@ int main(void)
         execute_timer_tasks(l_u64TickMs);
         MosCtrl();
         ble_loop();
+#if EN_4GCOMM
+        Comm4G_Loop();
+#endif
         CanTxRx();
         Shallow_Sleep();
         Deep_Sleep();	
